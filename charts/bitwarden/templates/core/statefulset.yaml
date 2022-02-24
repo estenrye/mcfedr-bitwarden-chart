@@ -24,42 +24,6 @@ spec:
         {{- end }}
     spec:
       containers:
-      {{- if .Values.attachments.enabled }}
-      - name: attachments
-        image: "{{ .Values.attachments.image.repository }}:{{ default .Values.global.coreVersion .Values.attachments.image.tag }}"
-        imagePullPolicy: {{ .Values.attachments.image.pullPolicy }}
-        envFrom:
-          - configMapRef:
-              name: {{ include "bitwarden.fullname" . }}-global-env
-          - secretRef:
-              name: {{ include "bitwarden.fullname" . }}-global-env
-        env:
-          - name: ASPNETCORE_URLS
-            value: "http://+:5001"
-        ports:
-        - name: attachments
-          containerPort: 5001
-          protocol: TCP
-        volumeMounts:
-        - name: core-data
-          mountPath: /etc/bitwarden/core/attachments
-          subPath: attachments
-          readOnly: true
-        {{- if .Values.global.healthchecks }}
-        livenessProbe:
-          httpGet:
-            path: /alive
-            port: attachments
-        readinessProbe:
-          httpGet:
-            path: /alive
-            port: attachments
-        {{- end }}
-        {{- if .Values.global.resources }}
-        resources:
-{{ toYaml .Values.attachments.resources | indent 10 }}
-        {{- end }}
-      {{- end }}
       {{- if .Values.api.enabled }}
       - name: api
         image: "{{ .Values.api.image.repository }}:{{ default .Values.global.coreVersion .Values.api.image.tag }}"

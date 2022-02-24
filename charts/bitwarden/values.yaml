@@ -80,6 +80,9 @@ attachments:
     repository: bitwarden/attachments
     tag: ~
     pullPolicy: IfNotPresent
+  persistence:
+    storageClass: ""
+    size: 5Gi
   service:
     type: ClusterIP
   resources:

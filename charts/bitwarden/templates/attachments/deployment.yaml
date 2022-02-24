@@ -1,0 +1,53 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "bitwarden.fullname" . }}-attachments
+  labels:
+    {{- include "bitwarden.labels" . | nindent 4 }}
+    app.kubernetes.io/component: attachments
+spec:
+  replicas: {{ .Values.identity.replicaCount }}
+  selector:
+    matchLabels:
+      {{- include "bitwarden.selectorLabels" . | nindent 6 }}
+      app.kubernetes.io/component: attachments
+  template:
+    metadata:
+      labels:
+        {{- include "bitwarden.selectorLabels" . | nindent 8 }}
+        app.kubernetes.io/component: attachments
+    spec:
+      containers:
+      - name: attachments
+        image: "{{ .Values.attachments.image.repository }}:{{ default .Values.global.coreVersion .Values.attachments.image.tag }}"
+        imagePullPolicy: {{ .Values.attachments.image.pullPolicy }}
+        envFrom:
+          - configMapRef:
+              name: {{ include "bitwarden.fullname" . }}-global-env
+          - secretRef:
+              name: {{ include "bitwarden.fullname" . }}-global-env
+        ports:
+          - name: attachments
+            containerPort: 5000
+            protocol: TCP
+        volumeMounts:
+          - name: attachments
+            mountPath: /etc/bitwarden/core/attachments
+        livenessProbe:
+          httpGet:
+            path: /alive
+            port: attachments
+        readinessProbe:
+          httpGet:
+            path: /alive
+            port: attachments
+        resources:
+{{ toYaml .Values.attachments.resources | indent 10 }}
+      volumes:
+        - name: attachments
+          persistentVolumeClaim:
+            claimName: {{ include "bitwarden.fullname" . }}-attachments
+      tolerations:
+        {{ toYaml .Values.identity.tolerations| indent 8 }}
+      affinity:
+        {{ toYaml .Values.identity.affinity | indent 8 }}
