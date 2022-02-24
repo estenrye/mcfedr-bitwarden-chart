@@ -233,6 +233,10 @@ nginx:
 
 ingress:
   enabled: true
+  tls:
+    enabled: true
+  annotations:
+    cert-manager.io/cluster-issuer: cloudflare-cluster-issuer
   ip: ~
   class: ~
 

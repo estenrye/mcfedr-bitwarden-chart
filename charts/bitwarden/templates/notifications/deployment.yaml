@@ -22,10 +22,11 @@ spec:
       - name: notifications
         image: "{{ .Values.notifications.image.repository }}:{{ default .Values.global.coreVersion .Values.notifications.image.tag }}"
         imagePullPolicy: {{ .Values.notifications.image.pullPolicy }}
-        env:
-        - name: ASPNETCORE_ENVIRONMENT
-          value: "Production"
-{{ include "bitwarden.global" . | indent 8 }}
+        envFrom:
+          - configMapRef:
+              name: {{ include "bitwarden.fullname" . }}-global-env
+          - secretRef:
+              name: {{ include "bitwarden.fullname" . }}-global-env
         ports:
         - name: http
           containerPort: 5000

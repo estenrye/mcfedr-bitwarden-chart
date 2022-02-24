@@ -22,16 +22,11 @@ spec:
       - name: mssql
         image: "{{ .Values.mssql.image.repository }}:{{ default .Values.global.coreVersion .Values.mssql.image.tag }}"
         imagePullPolicy: {{ .Values.mssql.image.pullPolicy }}
-        env:
-        - name: ACCEPT_EULA
-          value: "Y"
-        - name: MSSQL_PID
-          value: "Express"
-        - name: SA_PASSWORD
-          valueFrom:
-            secretKeyRef:
-              name: {{ include "bitwarden.fullname" . }}-mssql
-              key: sa-password
+        envFrom:
+          - configMapRef:
+              name: {{ include "bitwarden.fullname" . }}-mssql-env
+          - secretRef:
+              name: {{ include "bitwarden.fullname" . }}-mssql-env
         ports:
         - name: mssql
           containerPort: 1433

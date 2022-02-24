@@ -18,7 +18,7 @@ spec:
         {{- include "bitwarden.selectorLabels" . | nindent 8 }}
         app.kubernetes.io/component: core
       annotations:
-        checksum/identity-secret: {{ include (print $.Template.BasePath "/identity/secret.yaml") . | sha256sum }}
+        checksum/identity-secret: {{ include (print $.Template.BasePath "/identity.secret.yaml") . | sha256sum }}
         {{- if .Values.setup.enabled }}
         checksum/mssql-secret: {{ include (print $.Template.BasePath "/mssql/secret.yaml") . | sha256sum }}
         {{- end }}
@@ -28,12 +28,14 @@ spec:
       - name: attachments
         image: "{{ .Values.attachments.image.repository }}:{{ default .Values.global.coreVersion .Values.attachments.image.tag }}"
         imagePullPolicy: {{ .Values.attachments.image.pullPolicy }}
+        envFrom:
+          - configMapRef:
+              name: {{ include "bitwarden.fullname" . }}-global-env
+          - secretRef:
+              name: {{ include "bitwarden.fullname" . }}-global-env
         env:
-        - name: ASPNETCORE_ENVIRONMENT
-          value: "Production"
-        - name: ASPNETCORE_URLS
-          value: "http://+:5001"
-{{ include "bitwarden.global" . | indent 8 }}
+          - name: ASPNETCORE_URLS
+            value: "http://+:5001"
         ports:
         - name: attachments
           containerPort: 5001
@@ -62,12 +64,14 @@ spec:
       - name: api
         image: "{{ .Values.api.image.repository }}:{{ default .Values.global.coreVersion .Values.api.image.tag }}"
         imagePullPolicy: {{ .Values.api.image.pullPolicy }}
+        envFrom:
+          - configMapRef:
+              name: {{ include "bitwarden.fullname" . }}-global-env
+          - secretRef:
+              name: {{ include "bitwarden.fullname" . }}-global-env
         env:
-        - name: ASPNETCORE_ENVIRONMENT
-          value: "Production"
-        - name: ASPNETCORE_URLS
-          value: "http://+:5002"
-{{ include "bitwarden.global" . | indent 8 }}
+          - name: ASPNETCORE_URLS
+            value: "http://+:5002"
         ports:
         - name: api
           containerPort: 5002
@@ -94,12 +98,14 @@ spec:
       - name: identity
         image: "{{ .Values.identity.image.repository }}:{{ default .Values.global.coreVersion .Values.identity.image.tag }}"
         imagePullPolicy: {{ .Values.identity.image.pullPolicy }}
+        envFrom:
+          - configMapRef:
+              name: {{ include "bitwarden.fullname" . }}-global-env
+          - secretRef:
+              name: {{ include "bitwarden.fullname" . }}-global-env
         env:
-        - name: ASPNETCORE_ENVIRONMENT
-          value: "Production"
-        - name: ASPNETCORE_URLS
-          value: "http://+:5003"
-{{ include "bitwarden.global" . | indent 8 }}
+          - name: ASPNETCORE_URLS
+            value: "http://+:5003"
         ports:
         - name: identity
           containerPort: 5003
@@ -128,12 +134,14 @@ spec:
       - name: admin
         image: "{{ .Values.admin.image.repository }}:{{ default .Values.global.coreVersion .Values.admin.image.tag }}"
         imagePullPolicy: {{ .Values.admin.image.pullPolicy }}
+        envFrom:
+          - configMapRef:
+              name: {{ include "bitwarden.fullname" . }}-global-env
+          - secretRef:
+              name: {{ include "bitwarden.fullname" . }}-global-env
         env:
-        - name: ASPNETCORE_ENVIRONMENT
-          value: "Production"
-        - name: ASPNETCORE_URLS
-          value: "http://+:5004"
-{{ include "bitwarden.global" . | indent 8 }}
+          - name: ASPNETCORE_URLS
+            value: "http://+:5004"
         ports:
         - name: admin
           containerPort: 5004
@@ -162,19 +170,21 @@ spec:
         image: "{{ .Values.setup.image.repository }}:{{ default .Values.global.coreVersion .Values.setup.image.tag }}"
         imagePullPolicy: {{ .Values.setup.image.pullPolicy }}
         command: ["sh", "-c", "dotnet Setup.dll -update 1 -db 1 -os lin -corev $COREVERSION -webv $WEBVERSION"]
+        envFrom:
+          - configMapRef:
+              name: {{ include "bitwarden.fullname" . }}-global-env
+          - secretRef:
+              name: {{ include "bitwarden.fullname" . }}-global-env
         env:
-        - name: ASPNETCORE_ENVIRONMENT
-          value: "Production"
-        - name: COREVERSION
-          value: {{ .Values.global.coreVersion }}
-        - name: WEBVERSION
-          value: {{ .Values.global.webVersion }}
-{{ include "bitwarden.global" . | indent 8 }}
+          - name: COREVERSION
+            value: {{ .Values.global.coreVersion }}
+          - name: WEBVERSION
+            value: {{ .Values.global.webVersion }}
         volumeMounts:
-        - name: core-data
-          mountPath: /etc/bitwarden/core
-        - name: setup-conf
-          mountPath: /bitwarden/env
+          - name: core-data
+            mountPath: /etc/bitwarden/core
+          - name: setup-conf
+            mountPath: /bitwarden/env
         resources:
 {{ toYaml .Values.setup.resources | indent 10 }}
       {{- end }}
@@ -190,17 +200,11 @@ spec:
       - name: identity-conf
         secret:
           secretName: {{ include "bitwarden.fullname" . }}-identity
-          items:
-            - key: identity.pfx
-              path: identity.pfx
       {{- end }}
       {{- if .Values.setup.enabled }}
       - name: setup-conf
         secret:
-          secretName: {{ include "bitwarden.fullname" . }}-mssql
-          items:
-            - key: global.override.env
-              path: global.override.env
+          secretName: {{ include "bitwarden.fullname" . }}-setup-env
       {{- end }}
       tolerations:
 {{ toYaml .Values.core.tolerations | indent 8 }}
