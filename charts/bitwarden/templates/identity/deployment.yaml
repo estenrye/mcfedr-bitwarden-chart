@@ -1,0 +1,64 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "bitwarden.fullname" . }}-identity
+  labels:
+    {{- include "bitwarden.labels" . | nindent 4 }}
+    app.kubernetes.io/component: identity
+  annotations:
+    checksum/identity-secret: {{ include (print $.Template.BasePath "/identity.secret.yaml") . | sha256sum }}
+spec:
+  replicas: {{ .Values.identity.replicaCount }}
+  selector:
+    matchLabels:
+      {{- include "bitwarden.selectorLabels" . | nindent 6 }}
+      app.kubernetes.io/component: identity
+  template:
+    metadata:
+      labels:
+        {{- include "bitwarden.selectorLabels" . | nindent 8 }}
+        app.kubernetes.io/component: identity
+    spec:
+      containers:
+        - name: identity
+          image: "{{ .Values.identity.image.repository }}:{{ default .Values.global.coreVersion .Values.identity.image.tag }}"
+          imagePullPolicy: {{ .Values.identity.image.pullPolicy }}
+          envFrom:
+            - configMapRef:
+                name: {{ include "bitwarden.fullname" . }}-global-env
+            - secretRef:
+                name: {{ include "bitwarden.fullname" . }}-global-env
+          ports:
+            - name: identity
+              containerPort: 5000
+              protocol: TCP
+          volumeMounts:
+            - name: identity-conf
+              mountPath: /etc/bitwarden/identity
+            - name: aspnet-dataprotection
+              mountPath: /etc/bitwarden/core/aspnet-dataprotection
+          livenessProbe:
+            httpGet:
+              path: /.well-known/openid-configuration
+              port: identity
+            initialDelaySeconds: 60
+            periodSeconds: 15
+          readinessProbe:
+            httpGet:
+              path: /.well-known/openid-configuration
+              port: identity
+            initialDelaySeconds: 60
+            periodSeconds: 15
+          resources:
+{{ toYaml .Values.identity.resources | indent 12 }}
+      volumes:
+        - name: identity-conf
+          secret:
+            secretName: {{ include "bitwarden.fullname" . }}-identity
+        - name: aspnet-dataprotection
+          persistentVolumeClaim:
+            claimName: {{ include "bitwarden.fullname" . }}-aspnet-dataprotection
+      tolerations:
+        {{ toYaml .Values.identity.tolerations| indent 8 }}
+      affinity:
+        {{ toYaml .Values.identity.affinity | indent 8 }}

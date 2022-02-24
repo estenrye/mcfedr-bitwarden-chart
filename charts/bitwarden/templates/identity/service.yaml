@@ -15,5 +15,5 @@ spec:
       name: identity
   selector:
     {{- include "bitwarden.selectorLabels" . | nindent 4 }}
-    app.kubernetes.io/component: core
+    app.kubernetes.io/component: identity
 {{- end }}

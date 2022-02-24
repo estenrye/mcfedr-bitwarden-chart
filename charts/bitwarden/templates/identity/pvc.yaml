@@ -1,0 +1,14 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: {{ include "bitwarden.fullname" . }}-aspnet-dataprotection
+  labels:
+    {{- include "bitwarden.labels" . | nindent 4 }}
+    app.kubernetes.io/component: identity
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 100M
+  storageClassName: {{ .Values.core.persistence.storageClass | default "" | quote }}

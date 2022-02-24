@@ -123,6 +123,8 @@ identity:
     limits:
       cpu: 500m
       memory: 400Mi
+  tolerations: []
+  affinity: {}
 
 admin:
   enabled: true
